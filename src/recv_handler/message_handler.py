@@ -207,12 +207,9 @@ class TelegramUpdateHandler:
         # 在群聊中识别 @bot 或回复 bot 的消息，插入 mention_bot 段，便于核心识别
         try:
             if self._is_mentioning_self(msg):
-                if self.bot_id is not None:
-                    # 标记被@
-                    segs.insert(0, Seg(type="mention_bot", data="1"))
-                    # 提升优先级，尽量促使核心走回复动作
-                    segs.insert(0, Seg(type="priority_info", data={"message_type": "vip", "message_priority": 1.0}))
-                    additional["at_bot"] = True
+                # 标记被@
+                segs.insert(0, Seg(type="mention_bot", data="1"))
+                additional["at_bot"] = True
         except Exception:
             pass
 
