@@ -1,4 +1,5 @@
 import time
+import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from maim_message import (
@@ -30,6 +31,12 @@ ACCEPT_FORMAT = [
 class TelegramUpdateHandler:
     def __init__(self, tg_client: TelegramClient) -> None:
         self.tg = tg_client
+        self.bot_id: Optional[int] = None
+        self.bot_username: Optional[str] = None
+
+    def set_self(self, bot_id: int, username: Optional[str]) -> None:
+        self.bot_id = bot_id
+        self.bot_username = username
 
     async def check_allow_to_chat(self, user_id: int, chat_id: Optional[int], chat_type: str) -> bool:
         if is_group_chat(chat_type):
@@ -197,6 +204,81 @@ class TelegramUpdateHandler:
             file_name = document.get("file_name") or "文件"
             segs.append(Seg(type="text", data=f"[文件:{file_name}]"))
 
+        # 在群聊中识别 @bot 或回复 bot 的消息，插入标准化段，便于核心识别
+        try:
+            if self._is_mentioning_self(msg):
+                if self.bot_id is not None:
+                    display = self.bot_username or "bot"
+                    segs.insert(0, Seg(type="text", data=f"@<{display}:{self.bot_id}>"))
+                    additional["at_bot"] = True
+        except Exception:
+            pass
+
         return segs or None, additional
+
+    def _is_mentioning_self(self, msg: Dict[str, Any]) -> bool:
+        if self.bot_id is None:
+            return False
+        # 被回复到 bot
+        reply_to = msg.get("reply_to_message")
+        if reply_to and reply_to.get("from", {}).get("id") == self.bot_id:
+            logger.debug("@识别: 命中 reply_to_message.from.id == bot_id")
+            return True
+        # @mention in text entities / caption entities
+        text = msg.get("text") or ""
+        entities = msg.get("entities") or []
+        if self._entities_have_self(text, entities):
+            logger.debug("@识别: 命中 entities 中的 mention/text_mention/bot_command")
+            return True
+        caption = msg.get("caption") or ""
+        cap_entities = msg.get("caption_entities") or []
+        if self._entities_have_self(caption, cap_entities):
+            logger.debug("@识别: 命中 caption_entities 中的 mention/text_mention/bot_command")
+            return True
+        # 实体缺失时兜底纯文本（避免客户端异常导致的偏移问题）
+        if self.bot_username:
+            pattern = re.compile(rf"@{re.escape(self.bot_username)}\b", re.IGNORECASE)
+            if (text and pattern.search(text)) or (caption and pattern.search(caption)):
+                logger.debug("@识别: 命中文本兜底 @username 匹配")
+                return True
+        logger.debug(
+            f"@识别: 未命中 | bot_id={self.bot_id} bot_username={self.bot_username} "
+            f"text='{text}' entities={entities} caption='{caption}' cap_entities={cap_entities}"
+        )
+        return False
+
+    def _entities_have_self(self, base_text: str, entities: List[Dict[str, Any]]) -> bool:
+        if not entities:
+            return False
+        uname_lower = (self.bot_username or "").lower()
+        for ent in entities:
+            etype = ent.get("type")
+            if etype == "mention":
+                try:
+                    offset = int(ent.get("offset", 0))
+                    length = int(ent.get("length", 0))
+                    token = base_text[offset : offset + length]
+                    if uname_lower and token.lower() == f"@{uname_lower}":
+                        logger.debug(f"@识别: mention 实体命中 token='{token}'")
+                        return True
+                except Exception:
+                    continue
+            elif etype == "bot_command":
+                # 处理 /cmd@username 形式
+                try:
+                    offset = int(ent.get("offset", 0))
+                    length = int(ent.get("length", 0))
+                    token = base_text[offset : offset + length]
+                    if uname_lower and f"@{uname_lower}" in token.lower():
+                        logger.debug(f"@识别: bot_command 实体命中 token='{token}'")
+                        return True
+                except Exception:
+                    continue
+            elif etype == "text_mention":
+                user = ent.get("user") or {}
+                if user.get("id") == self.bot_id:
+                    logger.debug("@识别: text_mention.user.id 命中 bot_id")
+                    return True
+        return False
 
         return segs or None, additional
