@@ -236,6 +236,10 @@ class TelegramUpdateHandler:
 
     def _entities_have_self(self, base_text: str, entities: List[Dict[str, Any]]) -> bool:
         if not entities:
+            # 无实体时尝试纯文本匹配（覆盖 /cmd@username 或普通 @username）
+            if self.bot_username:
+                token = f"@{self.bot_username}".lower()
+                return token in (base_text or "").lower()
             return False
         uname_lower = (self.bot_username or "").lower()
         for ent in entities:
@@ -249,8 +253,22 @@ class TelegramUpdateHandler:
                         return True
                 except Exception:
                     continue
+            elif etype == "bot_command":
+                # 处理 /cmd@username 形式
+                try:
+                    offset = int(ent.get("offset", 0))
+                    length = int(ent.get("length", 0))
+                    token = base_text[offset : offset + length]
+                    if uname_lower and f"@{uname_lower}" in token.lower():
+                        return True
+                except Exception:
+                    continue
             elif etype == "text_mention":
                 user = ent.get("user") or {}
                 if user.get("id") == self.bot_id:
                     return True
+        # 实体存在但未命中时，做一次兜底纯文本匹配
+        if self.bot_username:
+            token = f"@{self.bot_username}".lower()
+            return token in (base_text or "").lower()
         return False
