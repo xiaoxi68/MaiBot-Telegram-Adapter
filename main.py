@@ -46,6 +46,19 @@ async def main() -> None:
         proxy_from_env=tg_cfg.proxy_from_env,
     )
     handler = TelegramUpdateHandler(tg_client)
+    # 获取机器人身份，便于适配器识别 @bot 与回复 bot 的消息
+    try:
+        me = await tg_client.get_me()
+        if me.get("ok") and me.get("result"):
+            bot_id = me["result"].get("id")
+            bot_username = me["result"].get("username")
+            if bot_id:
+                handler.set_self(bot_id, bot_username)
+                logger.info(f"Telegram Self: id={bot_id}, username={bot_username}")
+        else:
+            logger.warning(f"getMe 失败: {me}")
+    except Exception as e:
+        logger.warning(f"获取 Telegram 自身信息失败: {e}")
 
     # bind sender
     # 设置模块级发送器实例，供接收的 handler 读取
