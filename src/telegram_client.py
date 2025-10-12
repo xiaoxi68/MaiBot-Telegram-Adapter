@@ -44,11 +44,6 @@ class TelegramClient:
     def _url(self, method: str) -> str:
         return f"{self.api_base}/bot{self.token}/{method}"
 
-    async def get_me(self) -> Dict[str, Any]:
-        session = await self.ensure_session()
-        async with session.get(self._url("getMe"), proxy=self._http_proxy()) as resp:
-            return await resp.json()
-
     async def get_updates(
         self,
         offset: Optional[int] = None,
