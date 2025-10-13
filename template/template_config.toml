@@ -21,7 +21,6 @@ group_list = []
 private_list_type = "whitelist"
 private_list = []
 ban_user_id = []
-enable_poke = false
 
 [debug]
 level = "INFO"                       # 适配器日志级别：TRACE/DEBUG/INFO/WARNING/ERROR/CRITICAL

@@ -31,7 +31,6 @@ class ChatConfig(ConfigBase):
     private_list_type: Literal["whitelist", "blacklist"] = "whitelist"
     private_list: list[int] = field(default_factory=list)
     ban_user_id: list[int] = field(default_factory=list)
-    enable_poke: bool = False
 
 
 @dataclass
