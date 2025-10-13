@@ -4,6 +4,8 @@
 
 ## 快速开始
 
+推荐使用uv
+
 1. 安装依赖
 
 ```bash
@@ -91,6 +93,15 @@ diagnose = false                     # 更详细的异常诊断
 ```
 
 也可用环境变量覆盖：`LOG_LEVEL`、`LOG_MM_LEVEL`、`LOG_FILE`、`LOG_SERIALIZE`（"1"/"true"）。
+
+## 接入 Telegram
+
+1. 创建 Telegram Bot
+首先，打开 Telegram，搜索 BotFather，点击 Start，然后发送 /newbot，按照提示输入你的机器人名字和用户名。
+
+创建成功后，BotFather 会给你一个 token，请妥善保存。
+
+如果需要在群聊中使用，需要关闭Bot的 Privacy mode，对 BotFather 发送 /setprivacy 命令，然后选择bot， 再选择 Disable。
 
 ## 后续路线
 
