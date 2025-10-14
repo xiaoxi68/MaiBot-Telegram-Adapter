@@ -88,12 +88,24 @@ async def main() -> None:
     for t in (poll_task, router_task):
         t.cancel()
     await asyncio.gather(*[router_task, poll_task], return_exceptions=True)
-    await mmc_stop_com()
-    await tg_client.close()
+    # 关闭通信路由与 Telegram 客户端，吞掉取消异常，避免退出时噪声栈
+    try:
+        await mmc_stop_com()
+    except asyncio.CancelledError:
+        pass
+    except Exception as e:
+        logger.exception(f"停止 MaiBot 通信时出现异常: {e}")
+
+    try:
+        await tg_client.close()
+    except asyncio.CancelledError:
+        pass
+    except Exception as e:
+        logger.exception(f"关闭 Telegram 客户端失败: {e}")
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, asyncio.CancelledError):
         pass

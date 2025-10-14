@@ -1,3 +1,4 @@
+import asyncio
 from maim_message import Router, RouteConfig, TargetConfig
 
 from .config import global_config
@@ -22,5 +23,10 @@ async def mmc_start_com():
 
 
 async def mmc_stop_com():
-    await router.stop()
-
+    try:
+        await router.stop()
+    except asyncio.CancelledError:
+        # 优雅关停时的取消信号，吞掉避免向上冒泡
+        pass
+    except Exception as e:
+        logger.debug(f"router.stop 在关停过程中抛出异常: {e}")
