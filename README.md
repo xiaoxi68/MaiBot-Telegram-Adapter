@@ -2,14 +2,18 @@
 
 运行方式：独立/作为 MaiBot 插件运行。
 
+## 适配器刚刚起步，如果遇到bug请积极反馈
+
 ## 快速开始
 
 推荐使用uv
 
-1. 安装依赖
+1. 安装依赖（使用 uv）
 
 ```bash
-pip install -r requirements.txt
+# 推荐使用 uv 同步并创建虚拟环境
+uv sync
+# 如未安装 uv，请参考官方指引安装（或临时：pip install uv）
 ```
 
 2. 生成并填写配置
@@ -25,17 +29,15 @@ python MaiBot-Telegram-Adapter/main.py    # Linux/macOS 示例
 - `telegram_bot.token`：Telegram Bot Token（向 @BotFather 申请）
 - `maibot_server.host/port`：MaiBot Core WebSocket 服务（如 `ws://host:port/ws`）
 - `chat`：黑白名单策略
-- 代理（可选）：
+- 代理（国内服务器需要配置）：
   - `telegram_bot.proxy_enabled = true`
   - `telegram_bot.proxy_url = "socks5://127.0.0.1:1080"` 或 `http://127.0.0.1:7890`
   - `telegram_bot.proxy_from_env = true` 可从环境变量 `HTTP_PROXY/HTTPS_PROXY/NO_PROXY` 读取
 
-3. 运行
+3. 运行（使用 uv）
 
 ```bash
-python MaiBot-Telegram-Adapter\main.py  # Windows
-# 或
-python MaiBot-Telegram-Adapter/main.py   # Linux/macOS
+uv run python main.py
 ```
 
 ## 设计目标
@@ -96,7 +98,8 @@ diagnose = false                     # 更详细的异常诊断
 
 ## 接入 Telegram
 
-1. 创建 Telegram Bot
+创建 Telegram Bot
+
 首先，打开 Telegram，搜索 BotFather，点击 Start，然后发送 /newbot，按照提示输入你的机器人名字和用户名。
 
 创建成功后，BotFather 会给你一个 token，请妥善保存。
@@ -106,5 +109,4 @@ diagnose = false                     # 更详细的异常诊断
 ## 后续路线
 
 - 语音/表情/转发支持、reply 精准映射
-- Webhook 模式（当前默认 long polling）
 - 管理命令/消息回执回传（echo）
