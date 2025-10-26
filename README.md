@@ -1,6 +1,6 @@
 # MaiBot 与 Telegram 的 Adapter
 
-运行方式：独立/作为 MaiBot 插件运行。
+运行方式：独立 MaiBot 运行。
 
 ## 适配器刚刚起步，如果遇到bug，或者有想添加的新功能请积极反馈
 
